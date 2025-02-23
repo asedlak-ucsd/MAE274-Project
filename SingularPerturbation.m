@@ -42,7 +42,7 @@ classdef SingularPerturbation
           hold off;
       end
 
-      function rsys = getrom(obj, rstates, order)
+      function rm = getrom(obj, rstates, order)
           % Perform a zero-order singular perturbation reduction to 
           % remove the states in rstates from the state-space model
 
@@ -88,6 +88,8 @@ classdef SingularPerturbation
 
              rsys = ss(Ar, Br, Cr, Dr);
           end
+
+          rm = ReducedModel(obj.sys, rsys);
       end
    end
 

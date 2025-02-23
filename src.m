@@ -8,25 +8,23 @@ view(sp)
 
 %% ROM for the first GFLI
 
-inputs = [5 6];
+inputs = [1 2];
 outputs = inputs;
+sp = SingularPerturbation(grid.sys(inputs, outputs));
 
-rsys = getrom(sp, [1:20 31:68], "first");
+sp_rm = getrom(sp, [31:42 47:52 57:64], "zero");
 
-opts = bodeoptions;
-opts.PhaseWrapping = 'on';
-opts.PhaseWrappingBranch =2;
 
-bodeplot(grid.sys(inputs, outputs), opts);
-hold on;
-bodeplot(rsys(inputs, outputs), 'r--', opts);
-hold off;
+
+error(sp_rm, Inf)
 
 %% 
-sigma(grid.sys(inputs, outputs), rsys(inputs, outputs), 'r--')
-100*norm(rsys(inputs, outputs) - grid.sys(inputs, outputs), Inf) / norm(grid.sys(inputs, outputs), Inf)
+bodeplot(sp_rm)
 
 
 %% TODO: 
 % - Check eigenvalues of ROM
 % - Iteratively reducing should not affect ROM, check this
+% - Perform reduction for the 5-bus system
+%   * Remove line from the 5-bus for more radial structure
+% Hermite interpolate
