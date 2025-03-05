@@ -10,9 +10,10 @@ classdef ReducedModel
             obj.rom = rom;
         end
 
-        function e = error(obj, p)
+        function [e, peak] = error(obj, p)
             % Return error of ROM vs FOM  
-            e = 100*norm(obj.rom - obj.fom, p) / norm(obj.fom, p);
+            [n, peak] = norm(obj.rom - obj.fom, p);
+            e = 100*n / norm(obj.fom, p);
         end
 
         function bodeplot(obj)

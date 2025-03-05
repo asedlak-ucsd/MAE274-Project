@@ -1,52 +1,27 @@
 classdef SingularPerturbation
    properties
       sys
+      epsilon
    end
 
    methods
        function obj = SingularPerturbation(sys)
             obj.sys = sys;
+            % Calculate the minimum (nonzero) absolute value of each row
+            % that is, a measure of epsilon in the equation:
+            % epsilon*dx = Ax
+            obj.epsilon = fast_states(obj);
        end
 
       function view(obj)
-          % Display the participation factors of the system's first 10
-          % fastest modes
-          [P, d] = participation_factors(obj);
-          tiledlayout(2, 5, "TileSpacing", "none");
-
-          for i = 1:10
-              nexttile;
-              bar(P(i, :));
-              ylim([0 1.1]);
-              title_text = "$\lambda = " + round(d(i)) + "$";
-              title(title_text, 'Position', [length(d) / 2 0.96], 'Interpreter', 'latex');
-
-              set(gca, 'FontSize', 14);
-              if i ~= 1 && i ~= 6
-                  ax = gca;
-                  set(ax, 'YTick', []);
-              end
-
-              if i == 1 || i == 6
-                ylabel('Participation Factor', 'interpreter','latex', 'FontSize', 16);
-                if i == 1
-                    ax = gca;
-                    set(ax, 'XTick', []);
-                end
-             end
-
-              if i >= 5
-                  xlabel('State', 'Interpreter', 'latex', 'FontSize', 16);
-              end
-          end
-          hold off;
+          bar(obj.epsilon)
       end
 
       function rm = getrom(obj, rstates, order)
           % Perform a zero-order singular perturbation reduction to 
-          % remove the states in rstates from the state-space model
+          % remove the n - order fastest states
 
-          psys = permute_ss(obj, rstates);
+          psys = permute_ss(obj.sys, rstates);
 
           nf = length(rstates); % ns: number of slow states to include in the ROM
           ns = length(psys.A) - nf;
@@ -94,35 +69,17 @@ classdef SingularPerturbation
    end
 
    methods (Access = 'protected')
-      function [P, d] = participation_factors(obj)
-          % Get right eigenvectors and form left eigenvectors using the inverse
-          % Ensures the eigenvectors are normalized to one for each mode
-          [V, D] = eig(obj.sys.A);
-          W = inv(V);
-          d = diag(D);
-          % Sort the rows of P by each eigenvalue's distance from the origin
-          % in the complex plane.
-          dP = [abs(d) abs(V .* W')];
-          [dP, idx] = sortrows(dP, 'descend');
-          P = dP(:, 2:length(d) + 1);
-          d = d(idx);
-      end
+       function epsilon = fast_states(obj)
 
-      function psys = permute_ss(obj, idx)
-          % Permute the order of equations in a state-space model so that all
-          % states in idx are the final states
-          n = length(obj.sys.A);
-          states = 1:n;
-          states = [setdiff(states, idx) idx];
-          % Generate a permutation matrix P such that P * A will permute the rows 
-          % according to the idx array
-          P = zeros(n);
+         A = obj.sys.A;
+         n = length(A);
+         epsilon = zeros(1, n);
 
-          for i = 1:n
-              P(i, states(i)) = 1;
-          end
-
-          psys = ss2ss(obj.sys, P);
+         for i=1:n
+             % min abs non-zero element per row
+             b = A(i,:);
+             epsilon(i)=min(abs(b(b ~= 0))); 
+         end
       end
    end
 end
