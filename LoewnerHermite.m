@@ -41,9 +41,6 @@ classdef LoewnerHermite
                     end
                 end
             end
-
-            
-
         end
     end
 
@@ -117,6 +114,8 @@ classdef LoewnerHermite
             end
 
             rsys = ss(dss(-L_sigma, V, W, 0, -L));
+            % Force a stable ROM (so we can compare H2 error)
+            [rsys, ~] = stabsep(rsys);
             % Return reduced model object
             rom = ReducedModel(obj.sys, rsys);
         end
