@@ -8,6 +8,17 @@ classdef SingularPerturbation
             obj.sys = sys;
         end
 
+        function view(obj, r)
+           % Display the participation factors of the system's first 10
+           % fastest modes
+           [P, ~] = participation_factors(obj);
+           
+           % Normalize columns to one, then add the first 38-r rows
+           P = P ./ sum(P, 1);
+           bar(sum(P(1:(38-r), :), 1));
+           ylim([0, 1])
+        end
+
         function rsys = sp_rom(obj, rstates)
             % Perform a zero-order singular perturbation reduction to
             % remove the n - order fastest states
@@ -102,20 +113,18 @@ classdef SingularPerturbation
                 rm = getrom(obj, r+1, feedthrough);
             end
         end
-    end
-
-    methods (Access = 'protected')
-        function epsilon = fast_states(obj)
-
-            A = obj.sys.A;
-            n = length(A);
-            epsilon = zeros(1, n);
-
-            for i=1:n
-                % min abs non-zero element per row
-                b = A(i,:);
-                epsilon(i)=min(abs(b(b ~= 0)));
-            end
+        function [P, d] = participation_factors(obj)
+            % Get right eigenvectors and form left eigenvectors using the inverse
+            % Ensures the eigenvectors are normalized to one for each mode
+            [V, D] = eig(obj.sys.A);
+            W = inv(V);
+            d = diag(D);
+            % Sort the rows of P by each eigenvalue's distance from the origin
+            % in the complex plane.
+            dP = [abs(d) abs(V .* W')];
+            [dP, idx] = sortrows(dP, 'descend');
+            P = dP(:, 2:length(d) + 1);
+            d = d(idx);
         end
     end
 end

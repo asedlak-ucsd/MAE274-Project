@@ -1,35 +1,39 @@
 clear
-system = load('fom.mat');
+system = load('fom_external.mat');
 fom = system.sys;
 
-
-%% Singular Perturbation Model Reduction
-
-sp = SingularPerturbation(fom);
-
-clf;
-rom = getrom(sp, 22, false);
-
-sigmaplot(rom);
-%%
-clf
+%% Eigenvalues of the FOM
 d = eig(fom.A);
 scatter(real(d), imag(d))
-hold on;
-d = eig(rom.rom.A);
-scatter(real(d), imag(d), 'Marker', 'x')
 xlabel('$\Re(\lambda)$','interpreter', 'latex')
 ylabel('$\Im(\lambda)$','interpreter', 'latex')
 
-%% IRKA Model Reduction 
-irka = IRKA(fom);
-rom = getrom(irka, 10, 'subspace');
 
+%%
+r = [30 26 22 18 14 10 6 4 2];
 
-%% Loewner Model Reduction 
-n=10;
-lh = LoewnerHermite(fom);
-sigma = logspace(-1, 4, n);
+% Wrappers for each ROM method
+ROM_SP = @(r) getrom(SingularPerturbation(fom), r, true).rom;
+ROM_LH = @(r) getrom(LoewnerHermite(fom), logspace(-2, 5, r/2), "random", 25).rom;
+ROM_IK = @(r) getrom(IRKA(fom), r, "subspace").rom;
+ROM_BT = @(r) getrom(BalancedTruncation(fom), r).rom;
 
-lh_rom = getrom(lh, sigma, "random", 30);
-bodeplot(lh_rom)
+% Compute ROMs each of order R for the four methods
+for i=1:length(r)
+    sys = ROM_SP(r(i));
+    save("sp_"+i, "sys")
+
+    sys = ROM_LH(r(i));
+    save("lh_"+i, "sys")
+
+    sys = ROM_IK(r(i));
+    save("ik_"+i, "sys")
+
+    sys = ROM_BT(r(i));
+    save("bt_"+i, "sys")
+end
+
+%% Singular Perturbation 
+
+sp = SingularPerturbation(fom);
+view(sp, 10)
