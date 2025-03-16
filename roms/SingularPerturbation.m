@@ -23,7 +23,7 @@ classdef SingularPerturbation
             % Perform a zero-order singular perturbation reduction to
             % remove the n - order fastest states
 
-            psys = permute_ss(obj.sys, rstates);
+            psys = permute_ss(obj, obj.sys, rstates);
 
             nf = length(rstates); % ns: number of slow states to include in the ROM
             ns = length(psys.A) - nf;
@@ -66,7 +66,7 @@ classdef SingularPerturbation
 
             % Permute state space model so that states are ordered by
             % the magnitude of eigenvalues
-            tsys = permute_ss(tsys, ids);
+            tsys = permute_ss(obj, tsys, ids);
 
             % Remove the n fastest states from the current version of the ROM
             n = length(obj.sys.A) - r;
@@ -125,6 +125,23 @@ classdef SingularPerturbation
             [dP, idx] = sortrows(dP, 'descend');
             P = dP(:, 2:length(d) + 1);
             d = d(idx);
+        end
+
+        function psys = permute_ss(obj, sys, idx)
+            % Permute the order of equations in a state-space model so that all
+            % states in idx are the final states
+            n = length(sys.A);
+            states = 1:n;
+            states = [setdiff(states, idx) idx];
+            % Generate a permutation matrix P such that P * A will permute the rows
+            % according to the idx array
+            P = zeros(n);
+
+            for i = 1:n
+                P(i, states(i)) = 1;
+            end
+
+            psys = ss2ss(sys, P);
         end
     end
 end
